@@ -2,7 +2,7 @@ SetUp FrontEnd
 ```
 cd client-side
 yarn install
-yarn run dev
+yarn dev
 ```
 
 SetUp BackEnd
