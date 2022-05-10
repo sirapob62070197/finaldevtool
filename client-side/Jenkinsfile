@@ -1,0 +1,90 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Pull code') {
+            steps {
+                checkout scm
+            }
+        }
+        stage('Download dependency') {
+            steps {
+                sh 'cd client-side && yarn install'
+            }
+        }
+        stage('Run Unit test') {
+            steps {
+                sh 'cd client-side && yarn run test'
+            }
+        }
+        stage('Run Component test') {
+            steps {
+                echo 'run component test'
+            }
+        }
+        stage('Create Test Report'){
+            steps {
+                clover(cloverReportDir: 'client-side/coverage', cloverReportFileName: 'clover.xml',
+                    healthyTarget: [methodCoverage: 70, conditionalCoverage: 80, statementCoverage: 80],
+                    unhealthyTarget: [methodCoverage: 40, conditionalCoverage: 50, statementCoverage: 50],
+                    failingTarget: [methodCoverage: 0, conditionalCoverage: 0, statementCoverage: 0]
+                )
+
+                publishHTML target: [
+                    allowMissing: false,
+                    alwaysLinkToLastBuild: false,
+                    keepAll: true,
+                    reportDir: "./client-side/coverage/lcov-report",
+                    reportFiles: "index.html",
+                    reportName: 'Unit Test Report'
+                ]
+            }
+        }
+        stage('Deployment') {
+            steps {
+                withCredentials([
+                    usernamePassword(credentialsId: 'username-password-ssh', passwordVariable: 'password', usernameVariable: 'user_name'), 
+                    string(credentialsId: 'frontend-host', variable: 'host_ip'), string(credentialsId: 'host_name', variable: 'host_name'), 
+                    usernamePassword(credentialsId: 'team-5-dockerhub', passwordVariable: 'docker_password', usernameVariable: 'docker_username')]) {
+                    script{
+                        def remote = [:]
+                        remote.name = host_name
+                        remote.host = host_ip
+                        remote.user = user_name
+                        remote.password = password
+                        remote.allowAnyHosts = true
+                        
+                        sshCommand remote: remote, command: "git clone https://github.com/peetnawapol/project-01-software-dev-tool"
+                        sshCommand remote: remote, command: "docker-compose -f project-01-software-dev-tool/docker-compose-build.yml build client-side"
+                        
+                        sshCommand remote: remote, command: "docker login -u $docker_username -p $docker_password"
+                        sshCommand remote: remote, command: "docker push thanayutks/team-05-frontend:1.0.0"
+                        sshCommand remote: remote, command: "docker image rmi -f thanayutks/team-05-frontend:1.0.0"
+                        
+                        sshCommand remote: remote, command: "docker pull thanayutks/team-05-frontend:1.0.0"
+                        sshCommand remote: remote, command: "docker logout"
+                        sshCommand remote: remote, command: "docker-compose -f project-01-software-dev-tool/docker-compose-deploy.yml up -d client-side"
+                        sshCommand remote: remote, command: "rm -r project-01-software-dev-tool"
+                    }
+                }
+            }
+            post{
+                failure{
+                    script{
+                        def testing = build job: "team-5-frontend"
+                        sh '$testing.getNumber()'
+                    }
+                    withCredentials([gitUsernamePassword(credentialsId: 'github-team-5-frontend', gitToolName: 'Default')]) {
+                        sh 'git tag -d ' + '1.0.'+ $testing.getNumber()
+                    }
+                        
+                }
+            }
+        }
+        stage('Run E2E test') {
+            steps {
+                echo 'E2E command test'
+            }
+        }
+    }
+}

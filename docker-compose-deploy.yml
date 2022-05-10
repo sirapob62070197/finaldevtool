@@ -1,0 +1,11 @@
+version: "3.8"
+
+services:
+  client-side:
+    image: thanayutks/team-05-frontend:1.0.0
+    ports:
+      - "80:8080"
+  server-side:
+    image: thanayutks/team-05-backend:1.0.0
+    ports:
+      - "5000:5000"

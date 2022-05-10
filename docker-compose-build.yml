@@ -1,0 +1,9 @@
+version: "3.8"
+
+services:
+  client-side:
+    image: thanayutks/team-05-frontend:1.0.0
+    build: ./client-side
+  server-side:
+    image: thanayutks/team-05-backend:1.0.0
+    build: ./server-side
