@@ -2,12 +2,12 @@ SetUp FrontEnd
 ```
 cd client-side
 yarn install
-yarn dev
+yarn run dev
 ```
 
 SetUp BackEnd
 ```
 cd server-side
-npm install
-npm run serve
+yarn install
+yarn start
 ```
