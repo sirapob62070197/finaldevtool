@@ -1,13 +1,13 @@
 SetUp FrontEnd
 ```
-cd frontend
-npm install
-npm run serve
+cd client-side
+yarn install
+yarn dev
 ```
 
 SetUp BackEnd
 ```
-cd backend
+cd server-side
 npm install
 npm run serve
 ```
